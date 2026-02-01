@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Daphne, will you be my Valentine? 💘</title>
+  <title>My dearest Daphne, will you be my valentine? 💘 </title>
   <meta name="description" content="A little Valentine surprise ❤️" />
   <meta name="theme-color" content="#3f5f2f" />
   <style>
@@ -30,36 +30,6 @@
       overflow:hidden;
     }
 
-    /* Global cherry blossom layer (behind everything) */
-    .sakura-layer{
-      position: fixed;
-      inset: 0;
-      pointer-events: none;   /* never block clicks */
-      z-index: 0;
-      overflow: hidden;
-    }
-    .petal{
-      position: absolute;
-      top: -10vh;
-      will-change: transform;
-      font-size: 16px;
-      opacity: 0.95;
-      pointer-events: none;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
-      animation: fall linear forwards, sway ease-in-out infinite;
-    }
-    @keyframes fall{
-      to{
-        transform: translateY(120vh) rotate(360deg);
-        opacity: 1;
-      }
-    }
-    @keyframes sway{
-      0%   { transform: translateX(0)    }
-      50%  { transform: translateX(20px) }
-      100% { transform: translateX(0)    }
-    }
-
     /* Center layout */
     .center{
       position: absolute;
@@ -67,7 +37,7 @@
       display: grid;
       place-items: center;
       padding: 16px;
-      z-index: 1; /* above petals */
+      z-index: 1;
     }
 
     /* Merlot card */
@@ -162,7 +132,7 @@
       padding: 34px 26px;
       width: min(680px, 92vw);
       box-shadow: var(--shadow);
-      z-index: 2; /* above celebration petals */
+      z-index: 2; /* above the confetti canvas */
     }
     .overlay h2{
       margin:0;
@@ -171,13 +141,14 @@
       white-space: normal; /* honor <br> */
     }
 
-    /* Celebration layer INSIDE the overlay (so petals are visible with message) */
-    .celebration-layer{
+    /* Confetti canvas inside overlay */
+    .confetti {
       position: absolute;
       inset: 0;
-      pointer-events: none;
-      z-index: 1; /* below the .box but above overlay backdrop */
-      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* never block clicks */
+      z-index: 1;           /* under the .box */
     }
 
     /* Error toast (for No click) */
@@ -206,17 +177,14 @@
     /* Accessibility: reduce motion */
     @media (prefers-reduced-motion: reduce){
       .btn-yes:hover, .btn-yes:active{ transform: none; }
-      .petal{ animation-duration: 1ms !important; }
     }
   </style>
 </head>
 <body>
-  <!-- Global cherry blossom layer -->
-  <div class="sakura-layer" id="sakura"></div>
-
   <main class="center">
     <section class="card" aria-live="polite">
-      <h1><span id="name">Daphne</span>, will you be my Valentine? 💘</h1>
+      <!-- Updated heading text -->
+      <h1>My dearest Daphne,</h1>
 
       <div class="buttons" id="play-area">
         <!-- The moving NO (inside the card) -->
@@ -230,12 +198,12 @@
 
   <!-- Success dialog -->
   <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="yayTitle">
-    <!-- Celebration petals render here so they appear WITH the message -->
-    <div class="celebration-layer" id="celebrate"></div>
+    <!-- Confetti renders behind this box -->
+    <canvas class="confetti" id="confettiCanvas"></canvas>
 
     <div class="box">
-      <!-- Force two lines with <br> -->
-      <h2 id="yayTitle">Yay! 🌷<br>Inaro takan maong 💕</h2>
+      <!-- Two lines -->
+      <h2 id="yayTitle">Yay! 🌷<br>Inaro takan maong 💞</h2>
     </div>
   </div>
 
@@ -243,21 +211,13 @@
   <div class="toast" id="toast" role="status" aria-live="assertive">Error: “No” is unavailable. Please try “Yes”. 😉</div>
 
   <script>
-    // ====== Customize here (name only) ======
-    const PERSON_NAME  = "Daphne";
-    // ========================================
-
-    // Insert name
-    document.getElementById('name').textContent = PERSON_NAME;
-
     // Elements
     const playArea = document.getElementById('play-area');
     const noBtn = document.getElementById('noBtn');
     const yesBtn = document.getElementById('yesBtn');
     const overlay = document.getElementById('overlay');
     const toast = document.getElementById('toast');
-    const sakuraLayer = document.getElementById('sakura');
-    const celebrateLayer = document.getElementById('celebrate');
+    const confettiCanvas = document.getElementById('confettiCanvas');
 
     // ---------------------------
     // Moving NO logic (inside card)
@@ -322,67 +282,89 @@
     window.addEventListener('resize', () => {
       clearTimeout(window._rsz);
       window._rsz = setTimeout(moveNoButton, 120);
+      // also resize confetti canvas if overlay visible
+      if (overlay.classList.contains('show')) sizeCanvas();
     });
 
     // ---------------------------
-    // Petal helpers
-    // ---------------------------
-    function createPetal(container, emoji, fallSeconds, swaySeconds) {
-      const p = document.createElement('div');
-      p.className = 'petal';
-      p.textContent = emoji;
-      p.style.left = Math.random() * 100 + 'vw';
-      p.style.fontSize = (12 + Math.random() * 20) + 'px';
-      p.style.animationDuration = `${fallSeconds}s, ${swaySeconds}s`;
-      p.style.transform = `rotate(${Math.random() * 360}deg)`;
-      container.appendChild(p);
-      setTimeout(() => p.remove(), fallSeconds * 1000 + 600);
-    }
-
-    // ---------------------------
-    // YES → overlay + CELEBRATION blossoms (visible with message)
+    // YES → overlay + confetti pop
     // ---------------------------
     yesBtn.addEventListener('click', () => {
       overlay.classList.add('show');
-      // Run a short celebration rain for 2.5 seconds
-      startCelebrationRain(2500);
+      startConfetti(2500); // run confetti ~2.5s
     });
 
-    function startCelebrationRain(durationMs){
-      const emojis = ['🌸','🌸','🌸','🌸','🌺','💮','🪷','🪻']; // mostly sakura
-      const interval = 120; // denser rain during celebration
-      function drop(){
-        for (let i = 0; i < 8; i++) {
-          const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-          const fall = 1.8 + Math.random() * 2.0;   // quick celebratory fall
-          const sway = 1.5 + Math.random() * 1.5;
-          createPetal(celebrateLayer, emoji, fall, sway);
+    // ---------------------------
+    // Confetti implementation (lightweight canvas)
+    // ---------------------------
+    let ctx, particles = [], confettiTimer, rafId;
+
+    function sizeCanvas(){
+      // Match canvas to overlay box area
+      const rect = overlay.getBoundingClientRect();
+      confettiCanvas.width = rect.width;
+      confettiCanvas.height = rect.height;
+      confettiCanvas.style.width = rect.width + 'px';
+      confettiCanvas.style.height = rect.height + 'px';
+      ctx = confettiCanvas.getContext('2d');
+    }
+
+    function makeParticle(){
+      const w = confettiCanvas.width;
+      const h = confettiCanvas.height;
+      const colors = ['#ff4d88','#ff8fab','#ffd166','#7bdff2','#b5e48c','#cdb4db','#ffcad4','#f7aef8'];
+      return {
+        x: Math.random() * w,
+        y: -10,
+        vx: (Math.random() - 0.5) * 2,
+        vy: 2 + Math.random() * 3.5,
+        size: 6 + Math.random() * 6,
+        color: colors[(Math.random() * colors.length) | 0],
+        rot: Math.random() * Math.PI * 2,
+        vr: (Math.random() - 0.5) * 0.2,
+        shape: Math.random() < 0.5 ? 'rect' : 'circle',
+      };
+    }
+
+    function drawParticle(p){
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      if (p.shape === 'rect') {
+        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size/2, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function update(){
+      const w = confettiCanvas.width;
+      const h = confettiCanvas.height;
+      ctx.clearRect(0,0,w,h);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vr;
+        if (p.y > h + 20) {
+          particles.splice(i, 1);
+        } else {
+          drawParticle(p);
         }
       }
-      const t = setInterval(drop, interval);
-      // kick off immediately
-      drop();
-      setTimeout(() => clearInterval(t), durationMs);
+      rafId = requestAnimationFrame(update);
     }
 
-    // ---------------------------
-    // Continuous cherry blossoms across the whole page (30 seconds)
-    // ---------------------------
-    function spawnPetal(){
-      const emoji = Math.random() < 0.9 ? '🌸' : (Math.random() < 0.5 ? '💮' : '🌺');
-      const fallSeconds = 6 + Math.random() * 6;       // 6–12s to fall
-      const swaySeconds = 2 + Math.random() * 2;       // 2–4s per sway loop
-      createPetal(sakuraLayer, emoji, fallSeconds, swaySeconds);
-    }
-
-    // Start a gentle stream of petals for 30 seconds
-    const STREAM_INTERVAL_MS = 280;   // lower = denser
-    const STREAM_DURATION_MS = 30000; // 30 seconds
-    const sakuraTimer = setInterval(spawnPetal, STREAM_INTERVAL_MS);
-    setTimeout(() => clearInterval(sakuraTimer), STREAM_DURATION_MS);
-
-    // Optional: start with a few petals on load
-    for (let i = 0; i < 10; i++) spawnPetal();
-  </script>
-</body>
-</html>
+    function startConfetti(durationMs = 2000){
+      sizeCanvas();
+      // create bursts repeatedly during the duration
+      function burst() {
+        for (let i = 0; i < 45; i++) particles.push(makeParticle());
+      }
+      burst(); // initial burst
+      confettiTimer = setInterval(burst, 250);
