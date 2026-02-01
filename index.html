@@ -206,7 +206,7 @@
 
   <main class="center">
     <section class="card" aria-live="polite">
-      <h1><span id="name">Daphne</span>, will you be my Valentine? 💘</h1>
+      <h1><span id="name">My dearest Daphne</span>, will you be my Valentine? 💘</h1>
 
       <div class="buttons" id="play-area">
         <!-- The moving NO (inside the card) -->
@@ -221,8 +221,8 @@
   <!-- Success dialog -->
   <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="yayTitle">
     <div class="box">
-      <!-- Force two lines with <br> (JS will NOT overwrite this) -->
-      <h2 id="yayTitle">Yay! 🌷<br>Inaro taka maong 🪷</h2>
+      <!-- Force two lines with <br> -->
+      <h2 id="yayTitle">Yay! <br>Inaro taka maong 💐</h2>
     </div>
   </div>
 
@@ -315,7 +315,7 @@
     // ---------------------------
     yesBtn.addEventListener('click', () => {
       overlay.classList.add('show');
-      blossomBurst();              // extra burst on top of the continuous fall
+      blossomBurst();              // celebratory burst
       setTimeout(blossomBurst, 250);
       setTimeout(blossomBurst, 700);
     });
@@ -344,7 +344,7 @@
     }
 
     // ---------------------------
-    // Continuous cherry blossoms across the whole page (1 minute)
+    // Continuous cherry blossoms across the whole page (30 seconds)
     // ---------------------------
     function spawnPetal() {
       const emoji = Math.random() < 0.9 ? '🌸' : (Math.random() < 0.5 ? '💮' : '🌺');
@@ -353,9 +353,9 @@
       createPetal(emoji, fallSeconds, swaySeconds);
     }
 
-    // Start a gentle stream of petals for 60 seconds
-    const STREAM_INTERVAL_MS = 280; // lower = denser
-    const STREAM_DURATION_MS = 60000; // 1 minute
+    // Start a gentle stream of petals for 30 seconds
+    const STREAM_INTERVAL_MS = 280;   // lower = denser
+    const STREAM_DURATION_MS = 30000; // 30 seconds
     const sakuraTimer = setInterval(spawnPetal, STREAM_INTERVAL_MS);
     setTimeout(() => clearInterval(sakuraTimer), STREAM_DURATION_MS);
 
