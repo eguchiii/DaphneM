@@ -34,7 +34,7 @@
     .sakura-layer{
       position: fixed;
       inset: 0;
-      pointer-events: none;
+      pointer-events: none;   /* critical: never block clicks */
       z-index: 0;
       overflow: hidden;
     }
@@ -44,6 +44,7 @@
       will-change: transform;
       font-size: 16px;
       opacity: 0.95;
+      pointer-events: none;   /* critical for interactivity */
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
       animation: fall linear forwards, sway ease-in-out infinite;
       z-index: 0;
@@ -85,12 +86,6 @@
       font-size: clamp(28px, 5.4vw, 44px);
       line-height:1.15;
       color: var(--white);
-    }
-    p.lead{
-      margin:0 0 18px;
-      font-size: clamp(15px, 3.6vw, 18px);
-      color: #ffe6ee;
-      opacity:.95;
     }
 
     /* Action area (keeps "No" inside) */
@@ -212,7 +207,6 @@
   <main class="center">
     <section class="card" aria-live="polite">
       <h1><span id="name">Daphne</span>, will you be my Valentine? 💘</h1>
-      <p class="lead">There’s only one correct answer… 😇</p>
 
       <div class="buttons" id="play-area">
         <!-- The moving NO (inside the card) -->
@@ -272,10 +266,10 @@
         y = Math.random() * (areaRect.height - bh - pad * 2) + pad;
 
         // convert candidate to viewport coords to compare with YES
-        const candLeft = areaRect.left + x;
-        const candTop  = areaRect.top  + y;
-        const candRight = candLeft + bw;
-        const candBottom = candTop + bh;
+        const candLeft   = areaRect.left + x;
+        const candTop    = areaRect.top  + y;
+        const candRight  = candLeft + bw;
+        const candBottom = candTop  + bh;
 
         const overlapX = Math.max(0, Math.min(candRight, yesRect.right) - Math.max(candLeft, yesRect.left));
         const overlapY = Math.max(0, Math.min(candBottom, yesRect.bottom) - Math.max(candTop, yesRect.top));
@@ -285,7 +279,7 @@
       } while (overlapsYes && tries < maxTries);
 
       noBtn.style.left = x + "px";
-      noBtn.style.top = y + "px";
+      noBtn.style.top  = y + "px";
     }
 
     // Runaway behavior
@@ -303,3 +297,70 @@
 
     function showToast() {
       toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1800);
+      if (navigator.vibrate) navigator.vibrate(40);
+    }
+
+    // Initial placement
+    setTimeout(moveNoButton, 120);
+
+    // Resize safety (e.g., rotate phone)
+    window.addEventListener('resize', () => {
+      clearTimeout(window._rsz);
+      window._rsz = setTimeout(moveNoButton, 120);
+    });
+
+    // ---------------------------
+    // YES → overlay + extra blossom burst
+    // ---------------------------
+    yesBtn.addEventListener('click', () => {
+      overlay.classList.add('show');
+      blossomBurst();              // extra burst on top of the continuous fall
+      setTimeout(blossomBurst, 250);
+      setTimeout(blossomBurst, 700);
+    });
+
+    function createPetal(emoji, fallSeconds, swaySeconds) {
+      const p = document.createElement('div');
+      p.className = 'petal';
+      p.textContent = emoji;
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.fontSize = (12 + Math.random() * 20) + 'px';
+      p.style.animationDuration = `${fallSeconds}s, ${swaySeconds}s`;
+      p.style.transform = `rotate(${Math.random() * 360}deg)`;
+      sakuraLayer.appendChild(p);
+      setTimeout(() => p.remove(), fallSeconds * 1000 + 600);
+    }
+
+    function blossomBurst() {
+      const emojis = ['🌸','🌸','🌸','🌸','🌺','💮','🪷','🪻']; // mostly sakura
+      const count = 90;
+      for (let i = 0; i < count; i++) {
+        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+        const fallSeconds = 1.7 + Math.random() * 2.2;   // quick celebratory fall
+        const swaySeconds = 1.8 + Math.random() * 1.5;
+        createPetal(emoji, fallSeconds, swaySeconds);
+      }
+    }
+
+    // ---------------------------
+    // Continuous cherry blossoms across the whole page (1 minute)
+    // ---------------------------
+    function spawnPetal() {
+      const emoji = Math.random() < 0.9 ? '🌸' : (Math.random() < 0.5 ? '💮' : '🌺');
+      const fallSeconds = 6 + Math.random() * 6;       // 6–12s to fall
+      const swaySeconds = 2 + Math.random() * 2;       // 2–4s per sway loop
+      createPetal(emoji, fallSeconds, swaySeconds);
+    }
+
+    // Start a gentle stream of petals for 60 seconds
+    const STREAM_INTERVAL_MS = 280; // lower = denser
+    const STREAM_DURATION_MS = 60000; // 1 minute
+    const sakuraTimer = setInterval(spawnPetal, STREAM_INTERVAL_MS);
+    setTimeout(() => clearInterval(sakuraTimer), STREAM_DURATION_MS);
+
+    // Optional: start with a few petals on load
+    for (let i = 0; i < 10; i++) spawnPetal();
+  </script>
+</body>
+</html>
